@@ -715,8 +715,6 @@ export default App;
   sizes="100vw"
 />
 
-스타일링을 조금 수정해보겠습니다.
-
 ```javascript
 // App.jsx
 
@@ -788,4 +786,125 @@ export default App;
 
 수정 할 사항은 로그아웃을 하더라도 "스마트컨트랙트 연결을 완료했습니다." 문구는 그대로 입니다.
 
-이 부분을 수정해봅시다.
+onClickLogOut을 수정해봅시다.
+
+```javascript
+const onClickLogOut = () => {
+  setSigner(null);
+  setContract(null);
+};
+```
+
+총 발행량을 확인 할 수 있도록 작성해봅시다.
+
+```javascript
+// App.jsx
+
+import { Contract, ethers } from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+    setContract(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0x4018C906057bb778402f564aCa03E5A1C43A1Fb5", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => console.log(contract), [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16 flex flex-col gap-8">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex">
+            <div className="box-style">총 발행량 확인</div>
+            <button className="button-style" onClick={onClickTotalSupply}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+⚠️ 컨트랙트와 상호작용 할 때는 비동기 함수로 작성해야 한다고 생각하세요!
+
+위 코드를 실행하면 아래와 같은 값을 확인 할 수 있습니다.
+
+<img
+  src="vite/public/images/totalSupply.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+그런데 response 값 뒤에 n(bigint)가 붙어있습니다. bigint는 큰 숫자를 처리하는 데이터 타입입니다.
+
+그리고 숫자 값이 매우 크죠? 위 response 값은 eth 단위가 아닌 wei 입니다.
+
+> 참고 : 단위 편환 표
+
+<img
+  src="vite/public/images/ether.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+bigint 타입을 number타입으로 변환 후, "총 발행량 확인" 부분에 나타내주면 되겠죠?
