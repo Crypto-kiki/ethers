@@ -1,6 +1,4 @@
-// App.jsx
-
-import { Contract, ethers, formatEther } from "ethers";
+import { Contract, ethers, formatEther, parseEther } from "ethers";
 import { useEffect, useState } from "react";
 import abi from "./abi.json";
 
@@ -11,6 +9,8 @@ const App = () => {
   const [name, setName] = useState();
   const [symbol, setSymbol] = useState();
   const [myBalance, setMyBalance] = useState();
+  const [sendAddress, setSendAddress] = useState("");
+  const [sendToken, setSendToken] = useState("");
 
   const onClickMetamask = async () => {
     try {
@@ -58,6 +58,21 @@ const App = () => {
       const response = await contract.balanceOf(signer.address);
 
       setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickSendToken = async () => {
+    try {
+      if (!sendAddress || !sendToken) return;
+
+      const result = await contract.transfer(
+        sendAddress,
+        parseEther(sendToken, "wei")
+      );
+
+      console.log(result);
     } catch (error) {
       console.error(error);
     }
@@ -114,7 +129,7 @@ const App = () => {
             <div className="flex w-full">
               <div className="box-style grow">
                 {totalSupply
-                  ? `총 발행량: ${formatEther(totalSupply)}${symbol}`
+                  ? `총 발행량: ${formatEther(totalSupply)} ${symbol}`
                   : "총 발행량 확인"}
               </div>
               <button
@@ -139,6 +154,28 @@ const App = () => {
                   : "내 보유 토큰 확인"}
               </div>
               <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full items-end">
+              <div className="flex flex-col gap-2 grow">
+                <div className="ml-1 text-lg font-bold">토큰 전송</div>
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder="지갑 주소"
+                  value={sendAddress}
+                  onChange={(e) => setSendAddress(e.target.value)}
+                />
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder={`${symbol}을 입력하세요.`}
+                  value={sendToken}
+                  onChange={(e) => setSendToken(e.target.value)}
+                />
+              </div>
+              <button className="button-style ml-4" onClick={onClickSendToken}>
                 확인
               </button>
             </div>

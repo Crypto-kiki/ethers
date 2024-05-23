@@ -1186,14 +1186,7 @@ balanceOf(account) 를 사용해서 지갑주소를 받아오면 됩니다!
 코드는 아래와 같습니다.
 
 ```javascript
-import {
-  Contract,
-  ethers,
-  formatEther,
-  formatUnits,
-  parseEther,
-  parseUnits,
-} from "ethers";
+import { Contract, ethers, formatEther } from "ethers";
 import { useEffect, useState } from "react";
 import abi from "./abi.json";
 
@@ -1333,11 +1326,13 @@ export default App;
 
 ⚠️ 수정사항! 토큰 심볼을 eth가 아닌 → symbol로 변경해줍시다😅
 
-symbol을 가져와야 하는데,
+symbol을 contract가 조회 될 때(useEffect), 바로 가져올 수 있도록 해봅시다.
 
 ```javascript
 useEffect(() => console.log(contract), [contract]);
 ```
+
+그런데,
 
 useEffect안에서는 async함수를 사용하지 못합니다.
 
@@ -1499,3 +1494,451 @@ const App = () => {
 
 export default App;
 ```
+
+<img
+  src="vite/public/images/tokenSymbol.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+### 토큰 전송 기능 만들기
+
+input 태그를 사용해서 전송 기능을 만들어 보겠습니다.
+
+먼저 스타일링부터 해둘게요!
+
+```css
+/* index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .button-style {
+    @apply border-4 border-green-300 rounded-full bg-white text-xl px-6 py-3 font-semibold hover:bg-gray-100 hover:border-green-400;
+  }
+
+  .box-style {
+    @apply bg-white rounded-xl text-xl font-semibold px-6 py-3;
+  }
+
+  .input-style {
+    @apply bg-white rounded-xl text-xl font-semibold px-6 py-[14px] focus:outline-none border-2 focus:border-green-300;
+  }
+}
+```
+
+```javascript
+import { Contract, ethers, formatEther } from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+  const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [myBalance, setMyBalance] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+    setContract(null);
+    setTotalSupply(null);
+    setName(null);
+    setMyBalance(null);
+    setSymbol(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getSymbol = async () => {
+    try {
+      const response = await contract.symbol();
+
+      setSymbol(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0xb341EC4B7b005799d0Ec2b54108b6CAe7EC5d625", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => {
+    if (!contract) return;
+
+    getSymbol();
+  }, [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)} ${symbol}`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)} ${symbol}`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full items-end">
+              <div className="flex flex-col gap-2 grow">
+                <div className="ml-1 text-lg font-bold">토큰 전송</div>
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder="지갑 주소"
+                />
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder={`${symbol}을 입력하세요.`}
+                />
+              </div>
+              <button className="button-style ml-4" onClick={}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+이제 토큰 전송하는 기능을 작성해봅시다.
+
+```javascript
+import { Contract, ethers, formatEther, parseEther } from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+  const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [myBalance, setMyBalance] = useState();
+  const [sendAddress, setSendAddress] = useState("");
+  const [sendToken, setSendToken] = useState("");
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+    setContract(null);
+    setTotalSupply(null);
+    setName(null);
+    setMyBalance(null);
+    setSymbol(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickSendToken = async () => {
+    try {
+      if (!sendAddress || !sendToken) return;
+
+      const result = await contract.transfer(
+        sendAddress,
+        parseEther(sendToken, "wei")
+      );
+
+      console.log(result);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getSymbol = async () => {
+    try {
+      const response = await contract.symbol();
+
+      setSymbol(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0xb341EC4B7b005799d0Ec2b54108b6CAe7EC5d625", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => {
+    if (!contract) return;
+
+    getSymbol();
+  }, [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)} ${symbol}`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)} ${symbol}`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full items-end">
+              <div className="flex flex-col gap-2 grow">
+                <div className="ml-1 text-lg font-bold">토큰 전송</div>
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder="지갑 주소"
+                  value={sendAddress}
+                  onChange={(e) => setSendAddress(e.target.value)}
+                />
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder={`${symbol}을 입력하세요.`}
+                  value={sendToken}
+                  onChange={(e) => setSendToken(e.target.value)}
+                />
+              </div>
+              <button className="button-style ml-4" onClick={onClickSendToken}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+onClickSendToken 함수를 보면, sendAddress와 sendToken이 있어야 합니다.
+
+받을 사람과, 얼마를 보낼지는 당연히 있어야겠죠?
+
+그리고 전송 할 단위를 "wei"로 변경해야 합니다.
+
+따라서 sendToken을 그냥 보내는게 아닌, parseEther(sendToken)으로 변환 후 보내야 합니다!
+
+<img
+  src="vite/public/images/sendToken1.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+100개를 전송해 보겠습니다.
+
+<img
+  src="vite/public/images/sendToken2.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+전송이 완료되면, result값을 확인 할 수 있습니다.
+
+<img
+  src="vite/public/images/sendToken3.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+전송 후 보유토큰을 다시 확인해보면 100개가 줄어든 것을 확인 할 수 있습니다.
+
+실제로 전송 되었는지 확인해볼까요?
+
+sepolia etherscan : https://sepolia.etherscan.io/tx/0x80a645bcddab7a1c4e118a9bc0aebf5337e2f608c57ee5cff34e9df3c185644d
+
+<img
+  src="vite/public/images/sendToken4.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+세폴리아 이더스캔에서 조회하면 전송이 된 것을 확인 할 수 있습니다!
