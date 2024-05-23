@@ -576,4 +576,216 @@ test라는 토큰을 10000개 발행했습니다.
 
 위 이미지를 보시면, B의 계정으로 A 토큰 100개가 소각 된 것을 확인 할 수 있습니다.
 
-⚠️ 특정 함수는 관리자만 실행 할 수 있게 작성하는 것은 중요합니다! 컨트랙트가 배포 될 때 한 번만 실행되는 constructor에 관리자를 설정 할 수 있는 코드를 작성하는 것도 방법이겠죠? (이후에 modifier와 같이 배우실 겁니다🙂)
+⚠️ 특정 함수는 관리자만 실행 할 수 있게 작성하는 것은 중요합니다! 컨트랙트가 배포 될 때 한 번만 실행되는 constructor에 관리자를 설정 할 수 있는 코드를 작성하는 것도 방법이겠죠? (이후에 visibility, modifier와 같이 배우실 겁니다🙂)
+
+### 스마트컨트랙트 연결하기
+
+ethers docs : https://docs.ethers.org/v6/getting-started/#cid_54
+
+위 ethers 공식문서를 보면,
+
+```javascript
+// Create a contract
+contract = new Contract("dai.tokens.ethers.eth", abi, provider);
+```
+
+가 있습니다. 먼저 abi는 무엇일까요?
+
+> ABI (Application Binary Interface)는 스마트 컨트랙트와 상호 작용하기 위해 사용되는 인터페이스를 정의합니다. Solidity 파일을 컴파일하면 ABI라는 파일이 생성되는데, 이 파일은 스마트 컨트랙트의 함수와 이벤트를 설명하는 JSON 형식의 데이터입니다.
+
+그럼 ABI가 리액트와 연결하는데 왜 필요할까요?
+
+- 함수 호출 및 트랜잭션 전송: React 애플리케이션에서 스마트 컨트랙트의 함수를 호출하거나 트랜잭션을 전송하려면 ABI를 사용해 어떤 함수가 어떤 형식의 인수를 요구하는지 알아야 합니다.
+
+- 데이터 변환: 스마트 컨트랙트와 주고받는 데이터의 형식을 맞추기 위해 ABI를 사용하여 데이터를 적절히 인코딩/디코딩합니다.
+
+- 이벤트 처리: 스마트 컨트랙트에서 발생하는 이벤트를 리스닝하고 처리하는 데 ABI 정보가 필요합니다.
+
+그럼 Provider는 무엇일까요?
+
+> Provider는 이더리움 네트워크에 연결하여 블록체인과 상호작용할 수 있게 해주는 역할을 합니다.
+
+- 블록체인 데이터 접근: 블록체인의 상태, 트랜잭션, 블록 등의 데이터를 조회할 수 있습니다.
+
+- 트랜잭션 전송: 이더리움 네트워크에 트랜잭션을 전송할 수 있습니다.
+
+- 스마트 컨트랙트 호출: 스마트 컨트랙트의 함수를 호출하거나 실행할 수 있습니다.
+
+종류로는, Infura, Alchemy 같은 서비스 제공업체에서 호스팅하는 hosted Provider가 있고
+
+메타마스크와 같은 브라우저 확장 프로그램이 제공하는 provider와 연결하는 브라우저에 내장된 Provider 종류가 있습니다.
+
+마지막으로, "dai.tokens.ethers.eth" 이 부분은 스마트 컨트랙트 주소가 들어갑니다.
+
+그럼 ABI는 어디서 가져올까요?
+
+<img
+  src="vite/public/images/abi1.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+CONTRACT에 작성한 .sol파일이 맞는지 확인 하고 컴파일을 하시신 후 ABI를 복사하시면 됩니다.
+
+vite/src 폴더 하위에 abi.json 파일을 생성 후, 복사한 abi코드를 복사 붙여넣기 해주세요!
+
+<img
+  src="vite/public/images/abi2.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+- solidity 코드가 완전히 동일하다면, abi는 동일합니다.
+
+abi를 App.jsx에서 import합니다.
+
+```javascript
+// App.jsx
+
+import { Contract, ethers } from "ethers";
+import { useEffect, useState } from "react";
+
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(new Contract("스마트 컨트랙트 주소", abi, signer));
+  }, [signer]);
+
+  useEffect(() => console.log(contract), [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex justify-center items-center">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+29번째 줄 "스마트 컨트랙트 주소"에는 배포하신 스마트 컨트랙트 주소를 넣으시면 됩니다.
+
+코드를 실행하면, 아래와 같은 값을 확인 할 수 있습니다.
+
+<img
+  src="vite/public/images/contract1.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+스타일링을 조금 수정해보겠습니다.
+
+```javascript
+// App.jsx
+
+import { Contract, ethers } from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0x4018C906057bb778402f564aCa03E5A1C43A1Fb5", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => console.log(contract), [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+수정 할 사항은 로그아웃을 하더라도 "스마트컨트랙트 연결을 완료했습니다." 문구는 그대로 입니다.
+
+이 부분을 수정해봅시다.
