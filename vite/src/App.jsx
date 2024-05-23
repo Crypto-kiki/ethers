@@ -11,6 +11,8 @@ const App = () => {
   const [myBalance, setMyBalance] = useState();
   const [sendAddress, setSendAddress] = useState("");
   const [sendToken, setSendToken] = useState("");
+  const [checkAddress, setCheckAddress] = useState("");
+  const [checkToken, setCheckToken] = useState();
 
   const onClickMetamask = async () => {
     try {
@@ -73,6 +75,18 @@ const App = () => {
       );
 
       console.log(result);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickCheckToken = async () => {
+    try {
+      if (!checkAddress) return;
+
+      const result = await contract.balanceOf(checkAddress);
+
+      setCheckToken(result);
     } catch (error) {
       console.error(error);
     }
@@ -176,6 +190,29 @@ const App = () => {
                 />
               </div>
               <button className="button-style ml-4" onClick={onClickSendToken}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full items-start">
+              <div className="flex flex-col gap-2 grow">
+                <div className="ml-1 text-lg font-bold">토큰 확인</div>
+                <input
+                  className="input-style"
+                  type="text"
+                  placeholder="지갑 주소"
+                  value={checkAddress}
+                  onChange={(e) => setCheckAddress(e.target.value)}
+                />
+                {checkToken && (
+                  <div className="box-style">{`현재 보유 토큰: ${formatEther(
+                    checkToken
+                  )} ${symbol}`}</div>
+                )}
+              </div>
+              <button
+                className="button-style ml-4 mt-[36px]"
+                onClick={onClickCheckToken}
+              >
                 확인
               </button>
             </div>
