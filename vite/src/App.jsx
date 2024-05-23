@@ -8,6 +8,7 @@ const App = () => {
   const [signer, setSigner] = useState();
   const [contract, setContract] = useState();
   const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
 
   const onClickMetamask = async () => {
     try {
@@ -25,14 +26,26 @@ const App = () => {
     setSigner(null);
     setContract(null);
     setTotalSupply(null);
+    setName(null);
   };
 
   const onClickTotalSupply = async () => {
     try {
       const response = await contract.totalSupply();
 
-      console.log(response);
       setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      console.log(response);
+
+      setName(response);
     } catch (error) {
       console.error(error);
     }
@@ -42,7 +55,7 @@ const App = () => {
     if (!signer) return;
 
     setContract(
-      new Contract("0xB7070703A15044623e2dC6A75b55a293ebf4d3FA", abi, signer)
+      new Contract("0xb341EC4B7b005799d0Ec2b54108b6CAe7EC5d625", abi, signer)
     );
   }, [signer]);
 
@@ -71,15 +84,28 @@ const App = () => {
       {contract && (
         <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
           <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
-          <div className="flex w-full">
-            <div className="box-style grow">
-              {totalSupply
-                ? `총 발행량: ${formatEther(totalSupply)}ETH`
-                : "총 발행량 확인"}
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)}ETH`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
             </div>
-            <button className="button-style ml-4" onClick={onClickTotalSupply}>
-              확인
-            </button>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
           </div>
         </div>
       )}
