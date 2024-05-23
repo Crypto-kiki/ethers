@@ -349,6 +349,15 @@ contract MintToken is ERC20 {
 
 위 코드를 배포해 봅시다!
 
+‼️ 배포 전 컴파일 부터 실행해야 합니다! Auto compile 체크가 안되어 있다면 아래 사진을 보시고 확인해주세요!
+
+<img
+  src="vite/public/images/remixCompile.png"
+  width="718"
+  alt="auto compile check"
+  sizes="100vw"
+/>
+
 배포하려면 metamask 지갑을 로그인해야 합니다.
 
 <img
@@ -379,11 +388,18 @@ constructor는 스마트 컨트랙트가 배포 될 때, 최초 1번만 실행�
 
 현재 폴더 구조는 아래와 같습니다.
 
-ethers(FIRST-DAPP)
--- contracts
--- vite
+최상위 폴더
+
+- ethers(FIRST-DAPP)
+
+하위 폴더
+
+- contracts
+- vite
 
 vite폴더는 git clone을 했기 때문에, 깃을 제거해줍니다. git remote remove origin 명령어가 아닌, 깃을 삭제해줍니다.
+
+⚠️ vite 폴더 경로에서 아래 명령어를 순서대로 실행해주세요.
 
 > rm -rf .git
 
@@ -465,3 +481,99 @@ contracts는 굳이 배포 할 필요가 없기 때문에, vite폴더만 선택�
 선택 후, 배포(Deploy)하면 vite폴더만 배포가 됩니다.
 
 배포가 완료되었다면 주소로 접속해서 메타마스크 로그인 기능이 잘 작동되는지 확인해보세요!
+
+### burn function
+
+토큰을 소각시키는 함수(burnToken)를 만들어 봅시다.
+
+참고 링크 : https://docs.openzeppelin.com/contracts/5.x/api/token/erc20#ERC20-_burn-address-uint256-
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract MintToken is ERC20 {
+    constructor(uint256 _initEther, string memory _name, string memory _symbol) ERC20(_name, _symbol) {
+        _mint(msg.sender, _initEther * 10 ** 18);
+    }
+
+    function burnToken(uint256 _etherAmount) public {
+        _burn(msg.sender, _etherAmount * 10 ** 18);
+    }
+}
+```
+
+먼저 burnToken함수를 보면, 실행부분에 \_burn이 있습니다. \_burn은 뭘까요?
+
+<img
+  src="vite/public/images/burn1.png"
+  width="718"
+  alt="openzeppelin _burn"
+  sizes="100vw"
+/>
+
+함수를 보시면, 인자로 address 형의 account, uint256형의 value 값을 필요로 합니다.
+
+그런데 우리가 작성한 burnToken()에는 uint256 \_etherAmount(value)만 있고, address형인 account는 받지 않았습니다.
+
+대신, msg.sender라는 예약어를 사용했죠. msg.sender는 함수를 실행시킨 주체입니다.
+
+A가 해당 함수를 실행하면, A가 입력한 \_etherAmount 만큼 A의 토큰을 소각하는 함수입니다.
+
+따라서 burnToken 함수에 인자값으로 account가 없어도 되는 이유입니다.
+
+그럼 내가 다른사람의 토큰을 소각 할 수 있을까요? 아니면 누군가가 나의 토큰을 소각 할 수 있을까요? 확인해봅시다.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract MintToken is ERC20 {
+    constructor(uint256 _initEther, string memory _name, string memory _symbol) ERC20(_name, _symbol) {
+        _mint(msg.sender, _initEther * 10 ** 18);
+    }
+
+    function burnToken(uint256 _etherAmount) public {
+        _burn(msg.sender, _etherAmount * 10 ** 18);
+    }
+
+    function burnSomeoneToken(address _account, uint _amount) public {
+        _burn(_account, _amount * 10 ** 18);
+    }
+}
+```
+
+<img
+  src="vite/public/images/burn2.png"
+  width="718"
+  alt="deploy contract"
+  sizes="100vw"
+/>
+
+test라는 토큰을 10000개 발행했습니다.
+
+<img
+  src="vite/public/images/burn3.png"
+  width="718"
+  alt="A account balance"
+  sizes="100vw"
+/>
+
+컨트랙트를 배포한 A계정(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4)에 현재 10000개의 토큰이 있습니다.
+
+그럼 토큰이 없는 B계정(0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2)이 A계정의 토큰 100개를 소각해봅시다.
+
+<img
+  src="vite/public/images/burn4.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+위 이미지를 보시면, B의 계정으로 A 토큰 100개가 소각 된 것을 확인 할 수 있습니다.
+
+⚠️ 특정 함수는 관리자만 실행 할 수 있게 작성하는 것은 중요합니다! 컨트랙트가 배포 될 때 한 번만 실행되는 constructor에 관리자를 설정 할 수 있는 코드를 작성하는 것도 방법이겠죠? (이후에 modifier와 같이 배우실 겁니다🙂)
