@@ -516,7 +516,7 @@ contract MintToken is ERC20 {
   sizes="100vw"
 />
 
-함수를 보시면, 인자로 address 형의 account, uint256형의 value 값을 필요로 합니다.
+\_burn 함수를 보시면, 인자로 address 형의 account, uint256형의 value 값을 필요로 합니다.
 
 그런데 우리가 작성한 burnToken()에는 uint256 \_etherAmount(value)만 있고, address형인 account는 받지 않았습니다.
 
@@ -567,7 +567,7 @@ test라는 토큰을 10000개 발행했습니다.
 
 컨트랙트를 배포한 A계정(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4)에 현재 10000 개의 토큰이 있습니다.
 
-그럼 토큰이 없는 B계정(0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2)이 A계정의 토큰 100개를 소각해봅시다.
+B계정(0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2)이 A계정의 토큰 100개를 소각해봅시다. (B계정으로 전환해주세요.)
 
 <img
   src="vite/public/images/burn4.png"
@@ -605,7 +605,7 @@ contract = new Contract("dai.tokens.ethers.eth", abi, provider);
 
 그럼 Provider는 무엇일까요?
 
-> Provider는 이더리움 네트워크에 연결하여 블록체인과 상호작용할 수 있게 해주는 역할을 합니다.
+> Provider는 블록체인 네트워크에 연결하여 블록체인과 상호작용할 수 있게 해주는 역할을 합니다.
 
 - 블록체인 데이터 접근: 블록체인의 상태, 트랜잭션, 블록 등의 데이터를 조회할 수 있습니다.
 
@@ -628,9 +628,9 @@ contract = new Contract("dai.tokens.ethers.eth", abi, provider);
   sizes="100vw"
 />
 
-CONTRACT에 작성한 .sol파일이 맞는지 확인 하고 컴파일을 하시신 후 ABI를 복사하시면 됩니다.
+CONTRACT에 선택된 .sol파일이 MintToken.sol인지 확인 하고 컴파일을 하시신 후 ABI를 복사하시면 됩니다.
 
-vite/src 폴더 하위에 abi.json 파일을 생성 후, 복사한 abi코드를 복사 붙여넣기 해주세요!
+그리고 vite/src 폴더 하위에 abi.json 파일을 생성 후, 복사한 abi코드를 복사 붙여넣기 해주세요!
 
 <img
   src="vite/public/images/abi2.png"
@@ -716,23 +716,6 @@ export default App;
   alt="B burn A token"
   sizes="100vw"
 />
-
-그런데, totalSupply는 어떻게 가져왔을까요?
-
-이전에 배포했던, 컨트랙트의 함수들을 살펴봅시다.
-
-<img
-  src="vite/public/images/contractFunction.png"
-  width="718"
-  alt="B burn A token"
-  sizes="100vw"
-/>
-
-위 사진은 컨트랙트에서 사용이 가능한 함수들입니다. 하단에 totalSupply 함수가 있는 것을 확인 할 수 있죠?
-
-contract.함수명() 을 사용해서 불러온겁니다!
-
-마찬가지로 토큰이름(name), 잔고(balanceOf) 등 사용 할 수 있겠죠?
 
 ```javascript
 // App.jsx
@@ -1033,6 +1016,23 @@ console.log(weiToEth);
 const ethToWei = parseEther(weiToEth, "wei");
 console.log(ethToWei);
 ```
+
+그런데, totalSupply는 어떻게 가져왔을까요?
+
+이전에 배포했던, 컨트랙트의 함수들을 살펴봅시다.
+
+<img
+  src="vite/public/images/contractFunction.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+위 사진은 컨트랙트에서 사용이 가능한 함수들입니다. 하단에 totalSupply 함수가 있는 것을 확인 할 수 있죠?
+
+contract.함수명() 을 사용해서 불러온겁니다!
+
+마찬가지로 토큰이름(name), 잔고(balanceOf) 등 사용 할 수 있겠죠?
 
 ### 토큰 이름 가져오기
 
