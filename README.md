@@ -327,7 +327,7 @@ FIRST-DAPP
   src="vite/public/images/remixLocal.png"
   width="718"
   height="404"
-  alt="Image"
+  alt="connect local"
 />
 
 contracts폴더에 MintToken.sol 파일을 생성해주세요.
@@ -354,8 +354,7 @@ contract MintToken is ERC20 {
 <img
   src="vite/public/images/remixMetamask.png"
   width="718"
-  height="404"
-  alt="Image"
+  alt="connect metamask"
   sizes="100vw"
 />
 
@@ -366,6 +365,13 @@ contract MintToken is ERC20 {
 constructor는 스마트 컨트랙트가 배포 될 때, 최초 1번만 실행합니다.
 
 \_initEther, \_name, \_symbol 값을 입력 후 deploy 하시면 배포됩니다!
+
+<img
+  src="vite/public/images/remixDeploy.png"
+  width="718"
+  alt="deploy"
+  sizes="100vw"
+/>
 
 ## 240523
 
@@ -403,14 +409,59 @@ git init명령어를 시작 후 .gitignore에 아래 폴더들을 추가로 작�
 artifacts
 ```
 
-<!-- 각 폴더명 의미 써주기 -->
+각 폴더 및 폴더의 의미는 뭘까요?
+
+- .env 파일은 환경 변수를 정의하고 관리하기 위한 파일입니다. 보통 루트 디렉토리에 위치합니다.
+
+- .dpes 폴더는 "dependencies"의 약자로, 의존성 관련 파일들을 포함하고 있습니다. 폴더를 살펴보면 경로가 .dpes/npm/@openzeppelin/.. 으로 되어 있습니다. 한 가지 확인 할 수 있는 것은 MintToken.sol 코드 작성시 ERC20 을 import 했었죠? .deps/token/ERC20/extensions에 보면 ERC20.sol 파일도 볼 수 있습니다.
+
+- artifacts 폴더는 MintToken.sol 파일의 컴파일 된 결과물들이 저장된 폴더입니다.
 
 이제 깃에 업로드해줍니다.
 
-커맨드 명령어는 아래와 같습니다.
+커맨드 명령어는 아래의 순서와 같습니다.
 
-> git add .
-> git commit -m "first commit"
-> git branch -M main
-> git remote add origin 연결할 깃 레포주소
+> git add .  
+> git commit -m "first commit"  
+> git branch -M main  
+> git remote add origin 연결할 깃 레포주소  
 > git push -u origin main
+
+### Vercel 배포하기
+
+먼저 vercel에 배포해봅시다!
+
+> https://vercel.com/
+
+vercel에 접속하셔서 우측에 Add New - project를 선택합니다.
+
+<img
+  src="vite/public/images/vercel1.png"
+  width="718"
+  alt="vercel add new"
+  sizes="100vw"
+/>
+
+ethers폴더를 선택해 줍니다. (또는 FIRST-DAPP으로 실습하신 분은 FIRST-DAPP 폴더명을 선택)
+
+근데 중요한 점은, 최상위 폴더 FIRST-DAPP에서 하위 폴더로 vite와 contracts가 있습니다.
+
+contracts는 굳이 배포 할 필요가 없기 때문에, vite폴더만 선택해서 배포합니다.
+
+<img
+  src="vite/public/images/vercel3.png"
+  width="718"
+  alt="Edit root directory"
+  sizes="100vw"
+/>
+
+<img
+  src="vite/public/images/vercel4.png"
+  width="718"
+  alt="select root directory vite"
+  sizes="100vw"
+/>
+
+선택 후, 배포(Deploy)하면 vite폴더만 배포가 됩니다.
+
+배포가 완료되었다면 주소로 접속해서 메타마스크 로그인 기능이 잘 작동되는지 확인해보세요!
