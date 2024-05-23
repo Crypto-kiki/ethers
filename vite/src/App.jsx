@@ -9,6 +9,8 @@ const App = () => {
   const [contract, setContract] = useState();
   const [totalSupply, setTotalSupply] = useState();
   const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [myBalance, setMyBalance] = useState();
 
   const onClickMetamask = async () => {
     try {
@@ -27,6 +29,8 @@ const App = () => {
     setContract(null);
     setTotalSupply(null);
     setName(null);
+    setMyBalance(null);
+    setSymbol(null);
   };
 
   const onClickTotalSupply = async () => {
@@ -43,9 +47,27 @@ const App = () => {
     try {
       const response = await contract.name();
 
-      console.log(response);
-
       setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getSymbol = async () => {
+    try {
+      const response = await contract.symbol();
+
+      setSymbol(response);
     } catch (error) {
       console.error(error);
     }
@@ -59,7 +81,11 @@ const App = () => {
     );
   }, [signer]);
 
-  useEffect(() => console.log(contract), [contract]);
+  useEffect(() => {
+    if (!contract) return;
+
+    getSymbol();
+  }, [contract]);
 
   return (
     <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
@@ -88,7 +114,7 @@ const App = () => {
             <div className="flex w-full">
               <div className="box-style grow">
                 {totalSupply
-                  ? `총 발행량: ${formatEther(totalSupply)}ETH`
+                  ? `총 발행량: ${formatEther(totalSupply)}${symbol}`
                   : "총 발행량 확인"}
               </div>
               <button
@@ -103,6 +129,16 @@ const App = () => {
                 {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
               </div>
               <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)} ${symbol}`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
                 확인
               </button>
             </div>

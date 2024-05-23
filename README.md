@@ -717,6 +717,23 @@ export default App;
   sizes="100vw"
 />
 
+그런데, totalSupply는 어떻게 가져왔을까요?
+
+이전에 배포했던, 컨트랙트의 함수들을 살펴봅시다.
+
+<img
+  src="vite/public/images/contractFunction.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+위 사진은 컨트랙트에서 사용이 가능한 함수들입니다. 하단에 totalSupply 함수가 있는 것을 확인 할 수 있죠?
+
+contract.함수명() 을 사용해서 불러온겁니다!
+
+마찬가지로 토큰이름(name), 잔고(balanceOf) 등 사용 할 수 있겠죠?
+
 ```javascript
 // App.jsx
 
@@ -1146,3 +1163,339 @@ totalSupply가져오는 것 처럼 contract.name()을 이용해서 토큰 이름
   alt="B burn A token"
   sizes="100vw"
 />
+
+### 지갑의 잔고(balance)가져오기.
+
+컨트랙트의 balanceOf 함수를 사용해서 잔고를 가져와 봅시다!
+
+<img
+  src="vite/public/images/contractFunction.png"
+  width="718"
+  alt="B burn A token"
+  sizes="100vw"
+/>
+
+위 사진에서의 함수들은 사용 할 수 있는데 주의해야 할 점이 있습니다.
+
+balanceOf() 함수는 address형 account를 필요로 합니다!
+
+리액트에서 지갑 로그인 하면 account로 지갑주소를 받아왔었죠?
+
+balanceOf(account) 를 사용해서 지갑주소를 받아오면 됩니다!
+
+코드는 아래와 같습니다.
+
+```javascript
+import {
+  Contract,
+  ethers,
+  formatEther,
+  formatUnits,
+  parseEther,
+  parseUnits,
+} from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+  const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
+  const [myBalance, setMyBalance] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+    setContract(null);
+    setTotalSupply(null);
+    setName(null);
+    setMyBalance(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      console.log(response);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0xb341EC4B7b005799d0Ec2b54108b6CAe7EC5d625", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => console.log(contract), [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)}ETH`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)}ETH`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
+
+⚠️ 수정사항! 토큰 심볼을 eth가 아닌 → symbol로 변경해줍시다😅
+
+symbol을 가져와야 하는데,
+
+```javascript
+useEffect(() => console.log(contract), [contract]);
+```
+
+useEffect안에서는 async함수를 사용하지 못합니다.
+
+그러면?
+
+async 함수를 별도로 만들고, 함수를 useEffect에 넣어주면 됩니다.
+
+```javascript
+// App.jsx
+
+import { Contract, ethers, formatEther } from "ethers";
+import { useEffect, useState } from "react";
+import abi from "./abi.json";
+
+const App = () => {
+  const [signer, setSigner] = useState();
+  const [contract, setContract] = useState();
+  const [totalSupply, setTotalSupply] = useState();
+  const [name, setName] = useState();
+  const [symbol, setSymbol] = useState();
+  const [myBalance, setMyBalance] = useState();
+
+  const onClickMetamask = async () => {
+    try {
+      if (!window.ethereum) return;
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      setSigner(await provider.getSigner());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickLogOut = () => {
+    setSigner(null);
+    setContract(null);
+    setTotalSupply(null);
+    setName(null);
+    setMyBalance(null);
+    setSymbol(null);
+  };
+
+  const onClickTotalSupply = async () => {
+    try {
+      const response = await contract.totalSupply();
+
+      setTotalSupply(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickName = async () => {
+    try {
+      const response = await contract.name();
+
+      setName(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMyBalance = async () => {
+    try {
+      const response = await contract.balanceOf(signer.address);
+
+      setMyBalance(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getSymbol = async () => {
+    try {
+      const response = await contract.symbol();
+
+      setSymbol(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!signer) return;
+
+    setContract(
+      new Contract("0xb341EC4B7b005799d0Ec2b54108b6CAe7EC5d625", abi, signer)
+    );
+  }, [signer]);
+
+  useEffect(() => {
+    if (!contract) return;
+
+    getSymbol();
+  }, [contract]);
+
+  return (
+    <div className="bg-red-100 min-h-screen flex flex-col justify-start items-center py-16">
+      {signer ? (
+        <div className="flex gap-8">
+          <div className="box-style">
+            안녕하세요, {signer.address.substring(0, 7)}...
+            {signer.address.substring(signer.address.length - 5)}님
+          </div>
+          <button
+            className="button-style border-red-300 hover:border-red-400"
+            onClick={onClickLogOut}
+          >
+            로그아웃
+          </button>
+        </div>
+      ) : (
+        <button className="button-style" onClick={onClickMetamask}>
+          🦊 메타마스크 로그인
+        </button>
+      )}
+      {contract && (
+        <div className="mt-16 flex flex-col gap-8 bg-blue-100 grow max-w-md w-full">
+          <h1 className="box-style">스마트 컨트랙트 연결을 완료했습니다.</h1>
+          <div className="flex flex-col gap-8">
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {totalSupply
+                  ? `총 발행량: ${formatEther(totalSupply)}${symbol}`
+                  : "총 발행량 확인"}
+              </div>
+              <button
+                className="button-style ml-4"
+                onClick={onClickTotalSupply}
+              >
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {name ? `토큰 이름: ${name}` : "토큰 이름 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickName}>
+                확인
+              </button>
+            </div>
+            <div className="flex w-full">
+              <div className="box-style grow">
+                {myBalance
+                  ? `내 보유 토큰: ${formatEther(myBalance)} ${symbol}`
+                  : "내 보유 토큰 확인"}
+              </div>
+              <button className="button-style ml-4" onClick={onClickMyBalance}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
+```
